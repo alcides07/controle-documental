@@ -7,33 +7,25 @@ from consts import KEYS_DIR, FILES_DIR
 from utils.saveFile import saveFile
 from utils.signFile import signFile
 from utils.configCerticate import configCerticate
-from utils.decryptData import decryptData
-from utils.encryptData import encryptData
 from schemas.arquivo import ArquivoCreate, ArquivoRead
 from models.arquivo import Arquivo
 from orm.arquivo import create_arquivo, update_total_arquivo
 from utils.bytesToMegabytes import bytesToMegabytes
-from orm.common.index import delete_object, get_by_id, get_all, update_total
+from orm.common.index import delete_object, get_by_id, get_all
 from dependencies.authenticated_user import get_authenticated_user
 from dependencies.database import get_db
 from sqlalchemy.orm import Session
 from fastapi.encoders import jsonable_encoder
-from fastapi import File, UploadFile, BackgroundTasks
+from fastapi import File, UploadFile
 import os
+from cryptography.fernet import Fernet
 import tempfile
 
-
-TEMP_DIR = "./temp/"
 
 router = APIRouter(
     prefix="/arquivos",
     tags=["arquivo"],
 )
-
-
-def remove_temp(fd: int, temp_file_path: str):
-    os.close(fd)
-    os.remove(temp_file_path)
 
 
 @router.get("/",
@@ -74,8 +66,6 @@ async def create(
             status_code=400, detail="Erro. Formato de assinatura inválido!")
 
     configCerticate(author=author)
-    # dados_arquivo = arquivo.file.read()
-    # dados_criptografados, key = encryptData()
 
     arquivo_schema = ArquivoCreate(nome=arquivo.filename, tamanho=bytesToMegabytes(
         arquivo.size), local="")
@@ -88,7 +78,9 @@ async def create(
         author,
         str(data.id) + "-" + assinatura.filename,
         330,
-        280)
+        280,
+        str(data.id)
+    )
 
     data = jsonable_encoder(data)
     data_dict = dict(data)
@@ -96,11 +88,6 @@ async def create(
 
     update_total_arquivo(db=db, model=Arquivo, id=data["id"], data=data_dict)
     await removeSignature(dirSignature)
-
-    # os.makedirs(KEYS_DIR, exist_ok=True)
-
-    # with open(os.path.join(KEYS_DIR, str(data.id)+".key"), "wb") as key_file:
-    #     key_file.write(key)
 
     return jsonable_encoder(data)
 
@@ -126,26 +113,29 @@ def read_id(
             dependencies=[Depends(get_authenticated_user)],
             )
 def download(
-    background_tasks: BackgroundTasks,
     id: int = Path(description="identificador do arquivo"),
     db: Session = Depends(get_db),
 ):
 
     arquivo = get_by_id(db=db, id=id, model=Arquivo)
 
-    # with open(os.path.join(KEYS_DIR, str(id)+".key"), "rb") as key_file:
-    #     key = key_file.read()
+    with open(os.path.join(KEYS_DIR, str(id)+".key"), "rb") as key_file:
+        key = key_file.read()
 
-    # dados_descriptografados = decryptData(arquivo.dados, key)
+    cipher_suite = Fernet(key)
 
-    # fd, temp_file_path = tempfile.mkstemp()
-    # with open(temp_file_path, "wb") as temp_file:
-    #     temp_file.write(dados_descriptografados)
+    with open(os.path.join(FILES_DIR, str(id) + "-" + arquivo.nome), "rb") as data_file:
+        file = data_file.read()
 
-    # background_tasks.add_task(remove_temp, fd, temp_file_path)
+    dados_descriptografados = cipher_suite.decrypt(file)
+
+    temp_file = tempfile.NamedTemporaryFile(delete=False)
+
+    with open(temp_file.name, 'wb') as file:
+        file.write(dados_descriptografados)
 
     return FileResponse(
-        arquivo.local, media_type="application/pdf", filename=arquivo.nome)
+        temp_file.name, media_type="application/pdf", filename=arquivo.nome)
 
 
 @router.delete("/{id}/",

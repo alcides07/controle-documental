@@ -1,11 +1,16 @@
 import os
 from PDFNetPython3.PDFNetPython import *
 from typing import Tuple
+from cryptography.fernet import Fernet
+
+from consts import KEYS_DIR
+
+key = Fernet.generate_key()
+cipher_suite = Fernet(key)
 
 
 def signFile(input_file: str, signatureID: str, signature: str, x_coordinate: int,
-             y_coordinate: int, pages: Tuple = None, output_file: str = None
-             ):
+             y_coordinate: int, id_data: str, pages: Tuple = None, output_file: str = None):
     """Sign a PDF file"""
 
     # An output file is automatically generated with the word signed added at its end
@@ -47,7 +52,25 @@ def signFile(input_file: str, signatureID: str, signature: str, x_coordinate: in
     # Prepare the signature and signature handler for signing.
     approval_signature_digsig_field.SignOnNextSave(pk_filename, '')
     # The signing will be done during the following incremental save operation.
-    doc.Save(output_file, SDFDoc.e_incremental)
-    # Develop a Process Summary
+
+    temp_output_file = os.path.join(os.path.dirname(
+        output_file), 'temp_' + os.path.basename(output_file))
+    doc.Save(temp_output_file, SDFDoc.e_incremental)
+
+    with open(temp_output_file, 'rb') as file:
+        data = file.read()
+    encrypted_data = cipher_suite.encrypt(data)
+
+    with open(output_file, 'wb') as file:
+        file.write(encrypted_data)
+    os.remove(temp_output_file)
+
+    saveKey(id_data)
 
     return True
+
+
+def saveKey(id_data: str):
+    os.makedirs(KEYS_DIR, exist_ok=True)
+    with open(os.path.join(KEYS_DIR, id_data + ".key"), "wb") as key_file:
+        key_file.write(key)
