@@ -1,12 +1,12 @@
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, Path, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Path, status
 from models.user import User
 from orm.common.index import delete_object, get_by_key_value_exists, get_by_id, get_all
 from dependencies.authenticated_user import get_authenticated_user
 from schemas.user import UserCreate, UserRead
 from dependencies.database import get_db
 from sqlalchemy.orm import Session
-from orm.user import create_user
+from orm.user import create_user, update_user
 from fastapi.encoders import jsonable_encoder
 from passlib.context import CryptContext
 
@@ -88,3 +88,18 @@ def delete(
 
     user = jsonable_encoder(delete_object(db, User, id))
     return user
+
+
+@router.put("/{id}/",
+            response_model=UserCreate,
+            summary="Atualiza um usuário por completo",
+            dependencies=[Depends(get_authenticated_user)],
+            )
+def update(
+        id: int = Path(description="identificador do usuário"),
+        db: Session = Depends(get_db),
+        data: UserCreate = Body()
+):
+
+    response = jsonable_encoder(update_user(db, User, id, data))
+    return response

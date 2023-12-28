@@ -11,7 +11,7 @@ from utils.decryptData import decryptData
 from utils.encryptData import encryptData
 from schemas.arquivo import ArquivoCreate, ArquivoRead
 from models.arquivo import Arquivo
-from orm.arquivo import create_arquivo
+from orm.arquivo import create_arquivo, update_total_arquivo
 from utils.bytesToMegabytes import bytesToMegabytes
 from orm.common.index import delete_object, get_by_id, get_all, update_total
 from dependencies.authenticated_user import get_authenticated_user
@@ -91,10 +91,10 @@ async def create(
         280)
 
     data = jsonable_encoder(data)
-    newFile = Arquivo(**data)
-    newFile.local = dirFile
+    data_dict = dict(data)
+    data_dict["local"] = dirFile
 
-    update_total(db=db, model=Arquivo, id=data["id"], data=newFile)
+    update_total_arquivo(db=db, model=Arquivo, id=data["id"], data=data_dict)
     await removeSignature(dirSignature)
 
     # os.makedirs(KEYS_DIR, exist_ok=True)
