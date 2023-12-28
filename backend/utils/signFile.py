@@ -63,7 +63,6 @@ def signFile(input_file: str, signatureID: str, signature: str, x_coordinate: in
 
     with open(output_file, 'wb') as file:
         file.write(encrypted_data)
-    os.remove(temp_output_file)
 
     saveKey(id_data)
 
