@@ -66,7 +66,7 @@ export default function Login() {
               <p className="mt-10 text-center text-sm text-gray-500">
                 Ainda não possui conta?{" "}
                 <a
-                  href="/Auth/Register"
+                  href="/register"
                   className="font-semibold leading-6 text-indigo-600 hover:text-indigo-500"
                 >
                   Cadastrar-se

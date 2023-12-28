@@ -107,7 +107,7 @@ export default function Register() {
               <p className="mt-5 text-center text-sm text-gray-500">
                 Já possui conta?{" "}
                 <a
-                  href="/Auth/Login"
+                  href="/login"
                   className="font-semibold leading-6 text-indigo-600 hover:text-indigo-500"
                 >
                   Faça login!

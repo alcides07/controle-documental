@@ -1,10 +1,9 @@
-// import Login from "./features/Auth/Login";
-import PageNotFound from "./features/PageNotFound";
+import { Outlet } from "react-router-dom";
 
 export default function App() {
   return (
     <div className="App">
-      <PageNotFound />
+      <Outlet />
     </div>
   );
 }
