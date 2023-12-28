@@ -91,7 +91,7 @@ def delete(
 
 
 @router.put("/{id}/",
-            response_model=UserCreate,
+            response_model=UserRead,
             summary="Atualiza um usuário por completo",
             dependencies=[Depends(get_authenticated_user)],
             )
