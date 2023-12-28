@@ -8,7 +8,7 @@ class ArquivoBase(BaseModel):
 
 
 class ArquivoCreate(ArquivoBase):
-    dados: Any = Field(default=None, description="Dados do arquivo")
+    pass
 
 
 class ArquivoRead(ArquivoBase):

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, LargeBinary, Float
+from sqlalchemy import Column, Integer, String, Float
 from database import Base
 
 
@@ -11,4 +11,4 @@ class Arquivo(Base):
 
     tamanho = Column(Float)
 
-    dados = Column(LargeBinary)
+    file = Column(String, index=True)

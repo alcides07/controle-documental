@@ -3,7 +3,7 @@ from models.arquivo import Arquivo
 from schemas.arquivo import ArquivoCreate
 
 
-def create_arquivo(db: Session, arquivo: ArquivoCreate):
+async def create_arquivo(db: Session, arquivo: ArquivoCreate):
     db_arquivo = Arquivo(
         **arquivo.model_dump())
     db.add(db_arquivo)

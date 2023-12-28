@@ -1,6 +1,14 @@
 from typing import Annotated, Any, List
-from fastapi import APIRouter, Depends, HTTPException, Path
+from fastapi import APIRouter, Body, Depends, HTTPException, Path
 from fastapi.responses import FileResponse
+from utils.removeSignature import removeSignature
+from utils.saveSignature import saveSignature
+from consts import KEYS_DIR, FILES_DIR
+from utils.saveFile import saveFile
+from utils.signFile import signFile
+from utils.configCerticate import configCerticate
+from utils.decryptData import decryptData
+from utils.encryptData import encryptData
 from schemas.arquivo import ArquivoCreate, ArquivoRead
 from models.arquivo import Arquivo
 from orm.arquivo import create_arquivo
@@ -11,12 +19,10 @@ from dependencies.database import get_db
 from sqlalchemy.orm import Session
 from fastapi.encoders import jsonable_encoder
 from fastapi import File, UploadFile, BackgroundTasks
-from cryptography.fernet import Fernet
 import os
 import tempfile
 
 
-KEY_DIR = "./keys/"
 TEMP_DIR = "./temp/"
 
 router = APIRouter(
@@ -28,10 +34,6 @@ router = APIRouter(
 def remove_temp(fd: int, temp_file_path: str):
     os.close(fd)
     os.remove(temp_file_path)
-
-
-def generate_key():
-    return Fernet.generate_key()
 
 
 @router.get("/",
@@ -53,8 +55,10 @@ def read(
              summary="Cadastra um arquivo",
              dependencies=[Depends(get_authenticated_user)],
              )
-def create(
+async def create(
     arquivo: Annotated[UploadFile, File(description="Arquivo .pdf para upload")],
+    assinatura: Annotated[UploadFile, File(description="Arquivo .png .jpg ou .jpeg contendo a assinatura")],
+    author: str = Body(description="Nome do autor"),
     db: Session = Depends(get_db),
 ):
     if arquivo.content_type not in ["application/pdf"]:
@@ -65,24 +69,35 @@ def create(
         raise HTTPException(
             status_code=400, detail="Erro. Tamanho de arquivo excedido!")
 
-    key = generate_key()
-    cipher_suite = Fernet(key)
+    if (assinatura.content_type not in ["image/jpeg", "image/png", "image/jpg"]):
+        raise HTTPException(
+            status_code=400, detail="Erro. Formato de assinatura inválido!")
 
-    dados_arquivo = arquivo.file.read()
-    dados_criptografados = cipher_suite.encrypt(dados_arquivo)
+    configCerticate(author=author)
+    # dados_arquivo = arquivo.file.read()
+    # dados_criptografados, key = encryptData()
 
     arquivo_schema = ArquivoCreate(nome=arquivo.filename, tamanho=bytesToMegabytes(
-        arquivo.size), dados=dados_criptografados)
-    data = create_arquivo(db=db, arquivo=arquivo_schema)
+        arquivo.size))
+    data = await create_arquivo(db=db, arquivo=arquivo_schema)
 
-    os.makedirs(KEY_DIR, exist_ok=True)
+    await saveFile(arquivo, str(data.id))
+    dirSignature = await saveSignature(assinatura, str(data.id))
+    signFile(
+        FILES_DIR + str(data.id) + "-" + arquivo.filename,
+        author,
+        str(data.id) + "-" + assinatura.filename,
+        330,
+        280)
 
-    open(os.path.join(KEY_DIR, '__init__.py'), 'w')
+    await removeSignature(dirSignature)
 
-    with open(os.path.join(KEY_DIR, str(data.id)+".key"), "wb") as key_file:
-        key_file.write(key)
+    # os.makedirs(KEYS_DIR, exist_ok=True)
 
-    return jsonable_encoder(data, exclude=set(["dados"]))
+    # with open(os.path.join(KEYS_DIR, str(data.id)+".key"), "wb") as key_file:
+    #     key_file.write(key)
+
+    return jsonable_encoder(data)
 
 
 @router.get("/{id}/",
@@ -113,11 +128,10 @@ def download(
 
     arquivo = get_by_id(db=db, id=id, model=Arquivo)
 
-    with open(os.path.join(KEY_DIR, str(id)+".key"), "rb") as key_file:
+    with open(os.path.join(KEYS_DIR, str(id)+".key"), "rb") as key_file:
         key = key_file.read()
 
-    cipher_suite = Fernet(key)
-    dados_descriptografados = cipher_suite.decrypt(arquivo.dados)
+    dados_descriptografados = decryptData(arquivo.dados, key)
 
     fd, temp_file_path = tempfile.mkstemp()
     with open(temp_file_path, "wb") as temp_file:
