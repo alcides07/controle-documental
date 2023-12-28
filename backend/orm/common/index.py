@@ -11,7 +11,9 @@ def get_by_key_value_exists(db: Session, model: Any, key: str, value):
 
 def get_by_key_value(db: Session, model: Any, key: str, value):
     db_object = db.query(model).filter(getattr(model, key) == value).first()
-    return db_object
+    if (db_object):
+        return db_object
+    raise HTTPException(status.HTTP_404_NOT_FOUND)
 
 
 def get_by_id(db: Session, model: Any, id: int):

@@ -1,5 +1,5 @@
 from typing import Annotated, Any, List
-from fastapi import APIRouter, Body, Depends, HTTPException, Path
+from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query
 from fastapi.responses import FileResponse
 from utils.removeSignature import removeSignature
 from utils.saveSignature import saveSignature
@@ -11,7 +11,7 @@ from schemas.arquivo import ArquivoCreate, ArquivoRead
 from models.arquivo import Arquivo
 from orm.arquivo import create_arquivo, update_total_arquivo
 from utils.bytesToMegabytes import bytesToMegabytes
-from orm.common.index import delete_object, get_by_id, get_all
+from orm.common.index import delete_object, get_by_id, get_all, get_by_key_value
 from dependencies.authenticated_user import get_authenticated_user
 from dependencies.database import get_db
 from sqlalchemy.orm import Session
@@ -20,7 +20,7 @@ from fastapi import File, UploadFile
 import os
 from cryptography.fernet import Fernet
 import tempfile
-
+import hashlib
 
 router = APIRouter(
     prefix="/arquivos",
@@ -68,12 +68,12 @@ async def create(
     configCerticate(author=author)
 
     arquivo_schema = ArquivoCreate(nome=arquivo.filename, tamanho=bytesToMegabytes(
-        arquivo.size), local="")
+        arquivo.size), local="", codigo="")
     data = await create_arquivo(db=db, arquivo=arquivo_schema)
 
     dirFile = await saveFile(arquivo, str(data.id))
     dirSignature = await saveSignature(assinatura, str(data.id))
-    signFile(
+    data_criptograf = signFile(
         FILES_DIR + str(data.id) + "-" + arquivo.filename,
         author,
         str(data.id) + "-" + assinatura.filename,
@@ -85,6 +85,11 @@ async def create(
     data = jsonable_encoder(data)
     data_dict = dict(data)
     data_dict["local"] = dirFile
+
+    hash_object = hashlib.sha256(data_criptograf)
+    hex_dig = hash_object.hexdigest()
+
+    data_dict["codigo"] = hex_dig
 
     update_total_arquivo(db=db, model=Arquivo, id=data["id"], data=data_dict)
     await removeSignature(dirSignature)
@@ -150,3 +155,35 @@ def delete(
 
     arquivo = jsonable_encoder(delete_object(db, Arquivo, id))
     return arquivo
+
+
+@router.post("/autenticacao/",
+             response_model=Any,
+             summary="Verifica a integridade um arquivo",
+             dependencies=[Depends(get_authenticated_user)],
+             )
+def autenticar(
+        codigo: str = Query(description="Código de autenticação"),
+        db: Session = Depends(get_db)
+):
+
+    arquivo = jsonable_encoder(get_by_key_value(db, Arquivo, "codigo", codigo))
+
+    with open(os.path.join(FILES_DIR, str(arquivo["id"]) + "-" + arquivo["nome"]), "rb") as data_file:
+        file = data_file.read()
+
+    if (Arquivo):
+        with open(os.path.join(KEYS_DIR, str(arquivo["id"])+".key"), "rb") as key_file:
+            key = key_file.read()
+
+        cipher_suite = Fernet(key)
+
+        dados_descriptografados = cipher_suite.decrypt(file)
+
+        temp_file = tempfile.NamedTemporaryFile(delete=False)
+
+        with open(temp_file.name, 'wb') as file:
+            file.write(dados_descriptografados)
+
+        return FileResponse(
+            temp_file.name, media_type="application/pdf", filename=arquivo["nome"])

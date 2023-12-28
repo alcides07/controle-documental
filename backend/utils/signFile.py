@@ -67,7 +67,7 @@ def signFile(input_file: str, signatureID: str, signature: str, x_coordinate: in
 
     saveKey(id_data)
 
-    return True
+    return encrypted_data
 
 
 def saveKey(id_data: str):

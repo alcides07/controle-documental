@@ -12,3 +12,5 @@ class Arquivo(Base):
     tamanho = Column(Float)
 
     local = Column(String, index=True)
+
+    codigo = Column(String, default="")

@@ -5,6 +5,8 @@ from pydantic import BaseModel, Field
 class ArquivoBase(BaseModel):
     nome: str = Field(max_length=32, description="Nome do arquivo")
     tamanho: float = Field(description="Tamanho do arquivo em MB")
+    codigo: str = Field(
+        description="Hash dos dados criptografados do documento")
 
 
 class ArquivoCreate(ArquivoBase):
