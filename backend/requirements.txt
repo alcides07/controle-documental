@@ -14,3 +14,4 @@ deep-translator==1.11.4
 cryptography==41.0.7
 pyhanko==0.21.0
 PDFNetPython3
+pyOpenSSL==23.3.0
