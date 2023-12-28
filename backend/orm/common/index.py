@@ -41,3 +41,15 @@ def delete_object(db: Session, model: Any, id: int):
         db.commit()
         return db_object
     raise HTTPException(status.HTTP_404_NOT_FOUND)
+
+
+def update_total(db: Session, model: Any, id: int, data: Any):
+    db_object = db.query(model).filter(model.id == id).first()
+    if (db_object):
+        for key, value in vars(data).items():
+            if key != "_sa_instance_state":
+                setattr(db_object, key, value)
+        db.commit()
+        return db_object
+
+    raise HTTPException(status.HTTP_404_NOT_FOUND)

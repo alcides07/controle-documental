@@ -11,4 +11,4 @@ class Arquivo(Base):
 
     tamanho = Column(Float)
 
-    file = Column(String, index=True)
+    local = Column(String, index=True)

@@ -8,7 +8,7 @@ class ArquivoBase(BaseModel):
 
 
 class ArquivoCreate(ArquivoBase):
-    pass
+    local: str = Field(description="Local de armazenamento do arquivo")
 
 
 class ArquivoRead(ArquivoBase):

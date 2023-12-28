@@ -13,7 +13,7 @@ from schemas.arquivo import ArquivoCreate, ArquivoRead
 from models.arquivo import Arquivo
 from orm.arquivo import create_arquivo
 from utils.bytesToMegabytes import bytesToMegabytes
-from orm.common.index import delete_object, get_by_id, get_all
+from orm.common.index import delete_object, get_by_id, get_all, update_total
 from dependencies.authenticated_user import get_authenticated_user
 from dependencies.database import get_db
 from sqlalchemy.orm import Session
@@ -78,10 +78,10 @@ async def create(
     # dados_criptografados, key = encryptData()
 
     arquivo_schema = ArquivoCreate(nome=arquivo.filename, tamanho=bytesToMegabytes(
-        arquivo.size))
+        arquivo.size), local="")
     data = await create_arquivo(db=db, arquivo=arquivo_schema)
 
-    await saveFile(arquivo, str(data.id))
+    dirFile = await saveFile(arquivo, str(data.id))
     dirSignature = await saveSignature(assinatura, str(data.id))
     signFile(
         FILES_DIR + str(data.id) + "-" + arquivo.filename,
@@ -90,6 +90,11 @@ async def create(
         330,
         280)
 
+    data = jsonable_encoder(data)
+    newFile = Arquivo(**data)
+    newFile.local = dirFile
+
+    update_total(db=db, model=Arquivo, id=data["id"], data=newFile)
     await removeSignature(dirSignature)
 
     # os.makedirs(KEYS_DIR, exist_ok=True)
@@ -128,19 +133,19 @@ def download(
 
     arquivo = get_by_id(db=db, id=id, model=Arquivo)
 
-    with open(os.path.join(KEYS_DIR, str(id)+".key"), "rb") as key_file:
-        key = key_file.read()
+    # with open(os.path.join(KEYS_DIR, str(id)+".key"), "rb") as key_file:
+    #     key = key_file.read()
 
-    dados_descriptografados = decryptData(arquivo.dados, key)
+    # dados_descriptografados = decryptData(arquivo.dados, key)
 
-    fd, temp_file_path = tempfile.mkstemp()
-    with open(temp_file_path, "wb") as temp_file:
-        temp_file.write(dados_descriptografados)
+    # fd, temp_file_path = tempfile.mkstemp()
+    # with open(temp_file_path, "wb") as temp_file:
+    #     temp_file.write(dados_descriptografados)
 
-    background_tasks.add_task(remove_temp, fd, temp_file_path)
+    # background_tasks.add_task(remove_temp, fd, temp_file_path)
 
     return FileResponse(
-        temp_file_path, media_type="application/pdf", filename=arquivo.nome)
+        arquivo.local, media_type="application/pdf", filename=arquivo.nome)
 
 
 @router.delete("/{id}/",
