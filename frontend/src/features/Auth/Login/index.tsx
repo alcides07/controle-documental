@@ -1,20 +1,17 @@
-import Image from "next/image";
-import Link from "next/link";
+import React from "react";
 
 export default function Login() {
   return (
     <>
       <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
         <div className="sm:mx-auto sm:w-full sm:max-w-sm">
-          <Link href="/">
-            <Image
-              width={0}
-              height={0}
-              className="mx-auto h-20 w-auto"
-              src="/Logo.svg"
-              alt="Your Company"
-            />
-          </Link>
+          <img
+            width={0}
+            height={0}
+            className="mx-auto h-20 w-auto"
+            src="/Logo.svg"
+            alt="Your Company"
+          />
           <h2 className="mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900">
             Faça login em sua conta!
           </h2>
@@ -43,12 +40,12 @@ export default function Login() {
                   senha
                 </label>
                 <div className="text-sm">
-                  <Link
+                  <a
                     href="#"
                     className="font-semibold text-indigo-600 hover:text-indigo-500"
                   >
                     Forgot password?
-                  </Link>
+                  </a>
                 </div>
               </div>
               <div className="mt-2">
@@ -68,12 +65,12 @@ export default function Login() {
               </button>
               <p className="mt-10 text-center text-sm text-gray-500">
                 Ainda não possui conta?{" "}
-                <Link
-                  href="/register"
+                <a
+                  href="/Auth/Register"
                   className="font-semibold leading-6 text-indigo-600 hover:text-indigo-500"
                 >
                   Cadastrar-se
-                </Link>
+                </a>
               </p>
             </div>
           </form>
