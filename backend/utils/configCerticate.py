@@ -1,10 +1,12 @@
 import OpenSSL
 from utils.createKeyPair import createKeyPair
 from utils.createCertificate import createCertificate
+import os
 
 
 def configCerticate(author: str):
     """Generate the certificate"""
+    os.makedirs("./static", exist_ok=True)
     summary = {}
     summary['OpenSSL Version'] = OpenSSL.__version__
     # Generating a Private Key...

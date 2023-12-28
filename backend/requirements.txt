@@ -6,12 +6,10 @@ psycopg2-binary==2.9.9
 psycopg2==2.9.9
 python-jose==3.3.0
 passlib==1.7.4
-bcrypt==4.1.1
+bcrypt==4.0.1
 email-validator==2.1.0.post1
 gunicorn==21.2.0
 python-multipart==0.0.6
-deep-translator==1.11.4
 cryptography==41.0.7
-pyhanko==0.21.0
 PDFNetPython3
 pyOpenSSL==23.3.0
