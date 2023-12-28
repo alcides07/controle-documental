@@ -7,29 +7,34 @@ import Login from "../features/Auth/Login";
 import Register from "../features/Auth/Register";
 import PageNotFound from "../features/PageNotFound";
 import App from "../App";
+import TableComponent from "../components/Table";
 
 export const router = createBrowserRouter([
-  {
-    path: "/",
-    element: <App />,
-    errorElement: <PageNotFound />,
-    children: [
-      {
-        path: "/",
-        element: <HomePage />,
-      },
-      {
-        path: "/login",
-        element: <Login />,
-      },
-      {
-        path: "/register",
-        element: <Register />,
-      },
-      {
-        path: "/dashboard",
-        element: <Dashboard />,
-      },
-    ],
-  },
+	{
+		path: "/",
+		element: <App />,
+		errorElement: <PageNotFound />,
+		children: [
+			{
+				path: "/",
+				element: <HomePage />,
+			},
+			{
+				path: "/login",
+				element: <Login />,
+			},
+			{
+				path: "/register",
+				element: <Register />,
+			},
+			{
+				path: "/dashboard",
+				element: <Dashboard />,
+			},
+			{
+				path: "/table",
+				element: <TableComponent />,
+			},
+		],
+	},
 ]);
